@@ -1,0 +1,35 @@
+# Ignore the _build directory where Dune stores build artifacts
+_build/
+
+# Ignore Dune configuration file backups
+*.install
+*.merlin
+*.cmt
+*.cmti
+*.cmx
+*.cmxa
+*.o
+*.a
+*.cmxs
+*.exe
+
+# Ignore OCaml intermediate files
+*.annot
+*.byte
+*.native
+*.cmo
+*.cmi
+*.cmx
+*.cmxa
+*.cmt
+*.cmti
+*.cmi
+
+# Ignore editor and IDE specific files
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
+*.orig

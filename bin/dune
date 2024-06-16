@@ -1,0 +1,4 @@
+(executable
+ (public_name hft)
+ (name main)
+ (libraries hft core_kernel.pairing_heap))

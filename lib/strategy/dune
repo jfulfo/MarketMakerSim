@@ -1,0 +1,4 @@
+(library
+ (name strategy)
+ (public_name hft.strategy)
+ (modules maker momentum predict))
