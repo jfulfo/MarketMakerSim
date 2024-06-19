@@ -5,56 +5,63 @@ module FloatMap = Map.Make (Float)
 
 (* We will use pairing heaps to store the orders *)
 
-type order_side = Buy | Sell
-type order_instruction = Limit | Market | Stop
+type order_side =
+  | Buy
+  | Sell
 
-type order = {
-  id : int;
-  side : order_side;
-  price : float;
-  quantity : float;
-  instruction : order_instruction;
-  timestamp : float;
-}
+type order_instruction =
+  | Limit
+  | Market
+  | Stop
 
-let order_cmp (a : order) (b : order) : int =
-  if a.price = b.price then
-    if a.timestamp = b.timestamp then 0
-    else if a.timestamp < b.timestamp then -1
-    else 1
-  else if a.side = Buy then if a.price > b.price then -1 else 1
-  else if a.price < b.price then -1
-  else 1
-
-type order_book = {
-  bids : order Pairing_heap.t;
-  asks : order Pairing_heap.t;
-  stops : order list FloatMap.t;
-  map : order OrderMap.t;
-}
-
-let empty_order_book =
-  {
-    bids = Pairing_heap.create ~cmp:order_cmp ();
-    asks = Pairing_heap.create ~cmp:order_cmp ();
-    stops = FloatMap.empty;
-    map = OrderMap.empty;
+type order =
+  { id : int
+  ; side : order_side
+  ; price : float
+  ; quantity : float
+  ; instruction : order_instruction
+  ; timestamp : float
   }
 
+let order_cmp (a : order) (b : order) : int =
+  if a.price = b.price
+  then
+    if a.timestamp = b.timestamp then 0 else if a.timestamp < b.timestamp then -1 else 1
+  else if a.side = Buy
+  then if a.price > b.price then -1 else 1
+  else if a.price < b.price
+  then -1
+  else 1
+;;
+
+type order_book =
+  { bids : order Pairing_heap.t
+  ; asks : order Pairing_heap.t
+  ; stops : order list FloatMap.t
+  ; map : order OrderMap.t
+  }
+
+let empty_order_book =
+  { bids = Pairing_heap.create ~cmp:order_cmp ()
+  ; asks = Pairing_heap.create ~cmp:order_cmp ()
+  ; stops = FloatMap.empty
+  ; map = OrderMap.empty
+  }
+;;
+
 let add_order (book : order_book) (order : order) : order_book =
-  if order.instruction = Market then
-    raise
-      (Invalid_argument
-         "add_order: Market orders are not sent to the order book")
-  else
+  if order.instruction = Market
+  then raise (Invalid_argument "add_order: Market orders are not sent to the order book")
+  else (
     let book = { book with map = book.map |> OrderMap.add order.id order } in
     match order.side with
     | Buy ->
-        Pairing_heap.add book.bids order;
-        book
+      Pairing_heap.add book.bids order;
+      book
     | Sell ->
-        Pairing_heap.add book.asks order;
-        book
+      Pairing_heap.add book.asks order;
+      book)
+;;
 
 (* We can just make them into market orders once their price is hit *)
 (* Loop through all stops, if it is a Sell and stop price is geq price then market sell
@@ -65,25 +72,23 @@ let check_stop_orders (book : order_book) (price : float) : order_book =
     match orders with
     | [] -> []
     | order :: rest ->
-        if order.side == Buy && price >= order.price then
-          check_orders
-            rest (* This will be replaced by a market order dispatch *)
-        else if order.side == Sell && price <= order.price then
-          check_orders rest
-        else order :: check_orders rest
+      if order.side == Buy && price >= order.price
+      then check_orders rest (* This will be replaced by a market order dispatch *)
+      else if order.side == Sell && price <= order.price
+      then check_orders rest
+      else order :: check_orders rest
   in
   (* Now we fold over the stop orders and make the value check_orders orders *)
   book
   |> FloatMap.fold
        (fun price orders book ->
          let new_orders = check_orders orders in
-         if new_orders = [] then
-           { book with stops = book.stops |> FloatMap.remove price }
+         if new_orders = []
+         then { book with stops = book.stops |> FloatMap.remove price }
          else
-           {
-             book with
+           { book with
              stops =
-               book.stops
-               |> FloatMap.update price (Option.map (fun _ -> new_orders));
+               book.stops |> FloatMap.update price (Option.map (fun _ -> new_orders))
            })
        book.stops
+;;

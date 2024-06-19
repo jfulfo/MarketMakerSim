@@ -19,8 +19,10 @@ let plot_market_history history =
       lineto x y)
     history;
   ignore (read_key ())
+;;
 
 (* Suppose we are given a market and time_steps *)
 let plot_market market time_steps =
   let history = simulate_history_with_market market time_steps in
   plot_market_history history
+;;
