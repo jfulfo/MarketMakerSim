@@ -1,5 +1,5 @@
 (* Now we have to simulate an order book for our market *)
-
+open Market
 module OrderMap = Map.Make (Int)
 module FloatMap = Map.Make (Float)
 
@@ -63,10 +63,18 @@ let add_order (book : order_book) (order : order) : order_book =
       book)
 ;;
 
+(* We model the orders with a Laplace distribution over price and quantity *)
+let generate_limit_order (market : market) : order = failwith "Not implemented"
+
+let initialize_order_book (market : market) (n : int) : order_book =
+  failwith "Not implemented"
+;;
+
+let match_orders (book : order_book) : order_book = failwith "Not implemented"
+
 (* We can just make them into market orders once their price is hit *)
 (* Loop through all stops, if it is a Sell and stop price is geq price then market sell
    opposite for buy side*)
-(* Since we are doing this with market orders, we can just remove the order once hit *)
 let check_stop_orders (book : order_book) (price : float) : order_book =
   let rec check_orders orders =
     match orders with
@@ -91,4 +99,30 @@ let check_stop_orders (book : order_book) (price : float) : order_book =
                book.stops |> FloatMap.update price (Option.map (fun _ -> new_orders))
            })
        book.stops
+;;
+
+let pp_order (fmt : Format.formatter) (order : order) : unit =
+  Format.fprintf
+    fmt
+    "Order %d: %s %s %f %f %f"
+    order.id
+    (match order.side with
+     | Buy -> "Buy"
+     | Sell -> "Sell")
+    (match order.instruction with
+     | Limit -> "Limit"
+     | Market -> "Market"
+     | Stop -> "Stop")
+    order.price
+    order.quantity
+    order.timestamp
+;;
+
+let pp_order_book (fmt : Format.formatter) (order_book : order_book) : unit =
+  Format.fprintf
+    fmt
+    "Order Book:\n\t%d bids\n\t%d asks\n\t%d stops"
+    (Pairing_heap.length order_book.bids)
+    (Pairing_heap.length order_book.asks)
+    (FloatMap.cardinal order_book.stops)
 ;;

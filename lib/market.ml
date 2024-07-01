@@ -12,7 +12,7 @@
     good order book
     ***)
 
-type market_type =
+type market =
   { price : float
   ; volatility : float
   ; drift : float
@@ -20,8 +20,6 @@ type market_type =
   }
 
 (* We also need a way to store the history of the market *)
-type market_history = market_type list
-
 let geometric_brownian m =
   let dW = (Random.float 1.0 -. 0.5) *. 4.0 in
   { m with
